@@ -1,10 +1,19 @@
-# Character Sprite GIF Pipeline v2 — 256x256 Executable Package
+# Character Sprite GIF Pipeline v3 — Green-Screen 256x256 Executable Package
 
 ## Purpose
 
 Turn a short character prompt into a complete 2D pixel-art animation package.
 
-This v2 version fixes the old size contradiction. The final normalized format is:
+This v3 version uses a **green-screen source workflow** for better contour extraction:
+
+```text
+source generation: pure chroma-key green #00FF00
+post-processing: remove green into alpha
+alignment: use alpha silhouette / body contour
+final output: black-background GIFs by default
+```
+
+Final normalized format:
 
 ```text
 8 frames × 256x256 = 2048x256 final aligned sprite sheet
@@ -22,6 +31,11 @@ idle_sheet_aligned.png
 attack_sheet_aligned.png
 run_sheet_aligned.png
 hurt_sheet_aligned.png
+
+idle_sheet_transparent.png
+attack_sheet_transparent.png
+run_sheet_transparent.png
+hurt_sheet_transparent.png
 ```
 
 GIFs are generated from aligned 256x256 frames.
@@ -43,15 +57,30 @@ Always generate these four actions unless the user overrides them:
 
 When the user gives a character prompt:
 
-1. Generate one canonical base character reference.
-2. Generate four separate horizontal sprite sheets: `idle`, `attack`, `run`, `hurt`.
+1. Generate one canonical base character reference on pure green background.
+2. Generate four separate horizontal sprite sheets on pure green background: `idle`, `attack`, `run`, `hurt`.
 3. Split each sheet into 8 equal frames.
-4. Detect the character body in every frame.
-5. Align each frame by horizontal body center and foot baseline.
-6. Normalize each frame to exact `256x256`.
-7. Rebuild aligned sheets as exact `2048x256`.
-8. Export GIFs from aligned 256x256 frames.
-9. Deliver GIF links first.
+4. Remove chroma green into transparency.
+5. Detect character body by alpha silhouette.
+6. Align each frame by horizontal body center and foot baseline.
+7. Normalize each frame to exact `256x256`.
+8. Rebuild aligned sheets as exact `2048x256`.
+9. Export GIFs on black background by default.
+10. Deliver GIF links first.
+
+---
+
+## Why Green Background
+
+Black source backgrounds can damage contour detection because pixel-art characters often include black outlines, black hair, black clothes, and dark shadows. Green-screen source images make it easier to:
+
+- preserve black outlines
+- remove background cleanly
+- detect the true body silhouette
+- align foot baseline more accurately
+- reduce horizontal drift and vertical bounce
+
+Final GIFs should still be exported on black background unless the user asks for transparent or green output.
 
 ---
 
@@ -63,7 +92,8 @@ When the user gives a character prompt:
 - Use the base as reference for all four action sheets.
 - Generate one action per sheet.
 - Keep every sheet as one horizontal strip.
-- Use a pure black background.
+- Use pure chroma-key green `#00FF00` during source generation.
+- Remove green to alpha before contour detection.
 - Split sheets into 8 frames.
 - Normalize every final frame to `256x256`.
 - Normalize every final aligned sheet to `2048x256`.
@@ -75,6 +105,7 @@ When the user gives a character prompt:
 - Do not create a presentation board.
 - Do not create a labeled showcase image.
 - Do not add text, labels, frame numbers, UI, borders, or grids.
+- Do not use gradients, shadows, floors, scenery, texture, or lighting on the green background.
 - Do not export GIFs from raw unaligned sheets.
 - Do not leave obvious foot-baseline bounce or horizontal drifting if post-processing can fix it.
 
@@ -87,13 +118,21 @@ Use this unless the user overrides it:
 ```text
 2048x256 pixel art sprite sheet, 8 frames in one horizontal row
 
+SOURCE BACKGROUND:
+- pure chroma-key green #00FF00 only
+- no gradients
+- no shadows
+- no floor
+- no texture
+- no background objects
+- green will be removed in post-processing
+- final GIF will be exported on pure black background
+
 EXACT OUTPUT:
 - final aligned sheet must be exactly 2048x256
 - 8 frames, each exactly 256x256
 - one horizontal row only
 - no borders, no grid lines, no UI
-- pure black background only
-- each frame visually separated by empty black space if source generation allows it
 - final normalized frames must stay centered inside 256x256 cells
 
 STYLE:
@@ -110,12 +149,12 @@ no shape distortion
 CHARACTER SCALE:
 character occupies only 35% to 45% of each 256x256 frame height
 character occupies only 35% to 45% of each 256x256 frame width
-large empty black space around character
+large empty space around character
 do not zoom in
 
 SAFE AREA:
 all visible character pixels should stay inside the center 60% of each frame
-outer area remains black
+outer area remains green in source, then black/transparent in final
 
 BOUNDARY:
 no element may approach frame edges
@@ -135,7 +174,7 @@ large empty space above and below
 ### Base Character
 
 ```text
-Create a single base character reference image on a pure black background.
+Create a single base character reference image on a pure chroma-key green background #00FF00.
 
 Subject:
 {USER_CHARACTER_PROMPT}
@@ -149,8 +188,9 @@ Requirements:
 - clean pixel art
 - sharp edges
 - 32-bit sprite style
-- pure black background
-- centered with large empty space
+- pure #00FF00 green background only
+- no gradient, no shadow, no floor, no texture
+- centered with large empty green space
 - compact game-sprite-friendly silhouette
 
 Purpose:
@@ -175,9 +215,10 @@ Layout:
 - 8 frames only
 - final normalized output will be 2048x256
 - each final frame will be 256x256
-- pure black background only
+- pure chroma-key green #00FF00 background only
 - no text, labels, borders, grid, UI, or presentation layout
-- large black spacing around the character
+- no gradient, no shadow, no floor, no texture
+- large green spacing around the character
 - centered safe box per frame
 
 Style:
@@ -218,9 +259,10 @@ Layout:
 - 8 frames only
 - final normalized output will be 2048x256
 - each final frame will be 256x256
-- pure black background only
+- pure chroma-key green #00FF00 background only
 - no text, labels, borders, grid, UI, or presentation layout
-- large black spacing around the character
+- no gradient, no shadow, no floor, no texture
+- large green spacing around the character
 - centered safe box per frame
 
 Style:
@@ -262,9 +304,10 @@ Layout:
 - 8 frames only
 - final normalized output will be 2048x256
 - each final frame will be 256x256
-- pure black background only
+- pure chroma-key green #00FF00 background only
 - no text, labels, borders, grid, UI, or presentation layout
-- large black spacing around the character
+- no gradient, no shadow, no floor, no texture
+- large green spacing around the character
 - centered safe box per frame
 
 Run animation, 8 frames:
@@ -296,9 +339,10 @@ Layout:
 - 8 frames only
 - final normalized output will be 2048x256
 - each final frame will be 256x256
-- pure black background only
+- pure chroma-key green #00FF00 background only
 - no text, labels, borders, grid, UI, or presentation layout
-- large black spacing around the character
+- no gradient, no shadow, no floor, no texture
+- large green spacing around the character
 - centered safe box per frame
 
 Hurt animation, 8 frames:
@@ -322,7 +366,7 @@ Effect control:
 
 ## Executable Scripts
 
-Use:
+Use green-screen mode:
 
 ```bash
 pip install -r requirements.txt
@@ -330,7 +374,11 @@ python scripts/sprite_gif_pipeline.py \
   --input-dir generated_sheets \
   --output-dir output \
   --frame-size 256 \
-  --duration 110
+  --duration 110 \
+  --source-bg green \
+  --output-bg black \
+  --green-key 0,255,0 \
+  --green-tolerance 85
 ```
 
 Expected input files:
@@ -355,9 +403,33 @@ output/
   attack_sheet_aligned.png
   run_sheet_aligned.png
   hurt_sheet_aligned.png
+  idle_sheet_transparent.png
+  attack_sheet_transparent.png
+  run_sheet_transparent.png
+  hurt_sheet_transparent.png
   contact_sheet_aligned.png
   alignment_log.json
   validation_report.json
+```
+
+For legacy black-background inputs, use:
+
+```bash
+python scripts/sprite_gif_pipeline.py \
+  --input-dir generated_sheets \
+  --output-dir output \
+  --source-bg black \
+  --output-bg black
+```
+
+For auto detection, use:
+
+```bash
+python scripts/sprite_gif_pipeline.py \
+  --input-dir generated_sheets \
+  --output-dir output \
+  --source-bg auto \
+  --output-bg black
 ```
 
 ---
@@ -366,13 +438,15 @@ output/
 
 Before final delivery:
 
+- [ ] Source generation used pure green #00FF00.
 - [ ] No presentation board.
 - [ ] No labels, text, frame numbers, UI, grid, or borders.
 - [ ] Four action sheets exist.
 - [ ] Each sheet is horizontal.
+- [ ] Green background was removed before alignment.
 - [ ] Final aligned sheets are exact `2048x256`.
 - [ ] Final GIF frames are exact `256x256`.
-- [ ] Pure black background.
+- [ ] Final GIFs use black background unless user asks otherwise.
 - [ ] GIFs are generated from aligned sheets.
 - [ ] Foot baseline is stabilized where appropriate.
 - [ ] Horizontal body center is stabilized.
@@ -423,7 +497,14 @@ Do not create a presentation board.
 Do not create a contact sheet.
 Do not add labels, numbers, captions, UI, borders, or grids.
 Create only one single horizontal animation strip.
+Use pure #00FF00 green background only.
 ```
+
+If green removal leaves artifacts:
+
+1. Increase `--green-tolerance` gradually, for example 85 to 100.
+2. Confirm the source background is not a gradient.
+3. Regenerate with stricter green-screen prompt if needed.
 
 If GIFs are missing:
 
@@ -434,7 +515,7 @@ If GIFs are missing:
 
 If alignment is poor:
 
-1. Re-run alignment using largest connected component.
+1. Re-run alignment using alpha silhouette from green-screen removal.
 2. Align by median bottom Y and median center X.
-3. If effects distort detection, use `--ignore-horizontal-effects` or reduce effect size.
+3. If effects distort detection, reduce effect size.
 4. If the source sheet has fewer or more than 8 visible subjects, regenerate that action sheet.
