@@ -1,22 +1,41 @@
-# Character Sprite GIF Pipeline
+# Character Sprite GIF Pipeline v2 — 256x256 Executable Package
 
 ## Purpose
 
 Turn a short character prompt into a complete 2D pixel-art animation package.
 
-Default deliverables:
+This v2 version fixes the old size contradiction. The final normalized format is:
 
-- `idle.gif`
-- `attack.gif`
-- `run.gif`
-- `hurt.gif`
-- `idle_sheet_aligned.png`
-- `attack_sheet_aligned.png`
-- `run_sheet_aligned.png`
-- `hurt_sheet_aligned.png`
-- optional `base_reference.png`, `contact_sheet_aligned.png`, `alignment_log.txt`
+```text
+8 frames × 256x256 = 2048x256 final aligned sprite sheet
+```
 
-The main goal is to deliver GIFs first. Do not show intermediate previews unless the user asks.
+Default output:
+
+```text
+idle.gif
+attack.gif
+run.gif
+hurt.gif
+
+idle_sheet_aligned.png
+attack_sheet_aligned.png
+run_sheet_aligned.png
+hurt_sheet_aligned.png
+```
+
+GIFs are generated from aligned 256x256 frames.
+
+---
+
+## Default Actions
+
+Always generate these four actions unless the user overrides them:
+
+1. `idle`
+2. `attack`
+3. `run`
+4. `hurt`
 
 ---
 
@@ -25,16 +44,14 @@ The main goal is to deliver GIFs first. Do not show intermediate previews unless
 When the user gives a character prompt:
 
 1. Generate one canonical base character reference.
-2. Generate four separate horizontal sprite sheets:
-   - idle
-   - attack
-   - run
-   - hurt
+2. Generate four separate horizontal sprite sheets: `idle`, `attack`, `run`, `hurt`.
 3. Split each sheet into 8 equal frames.
-4. Align frames by body center and foot baseline.
-5. Rebuild aligned sprite sheets.
-6. Export GIFs from the aligned frames.
-7. Reply with GIF links first.
+4. Detect the character body in every frame.
+5. Align each frame by horizontal body center and foot baseline.
+6. Normalize each frame to exact `256x256`.
+7. Rebuild aligned sheets as exact `2048x256`.
+8. Export GIFs from aligned 256x256 frames.
+9. Deliver GIF links first.
 
 ---
 
@@ -48,6 +65,8 @@ When the user gives a character prompt:
 - Keep every sheet as one horizontal strip.
 - Use a pure black background.
 - Split sheets into 8 frames.
+- Normalize every final frame to `256x256`.
+- Normalize every final aligned sheet to `2048x256`.
 - Align frames before GIF export.
 - Deliver GIFs as the primary output.
 
@@ -56,9 +75,8 @@ When the user gives a character prompt:
 - Do not create a presentation board.
 - Do not create a labeled showcase image.
 - Do not add text, labels, frame numbers, UI, borders, or grids.
-- Do not deliver only images when GIFs are expected.
 - Do not export GIFs from raw unaligned sheets.
-- Do not leave obvious foot baseline bounce or horizontal drifting if post-processing can fix it.
+- Do not leave obvious foot-baseline bounce or horizontal drifting if post-processing can fix it.
 
 ---
 
@@ -67,17 +85,16 @@ When the user gives a character prompt:
 Use this unless the user overrides it:
 
 ```text
-3840x320 pixel art sprite sheet, 8 frames in one horizontal row
+2048x256 pixel art sprite sheet, 8 frames in one horizontal row
 
 EXACT OUTPUT:
-- final image should follow a 3840x320 sprite-sheet layout
-- 8 frames, each frame conceptually 320x320
+- final aligned sheet must be exactly 2048x256
+- 8 frames, each exactly 256x256
 - one horizontal row only
-- perfectly even spacing
 - no borders, no grid lines, no UI
 - pure black background only
-- each frame visually separated by empty black space
-- all animation stays within a fixed bounding box centered in each frame
+- each frame visually separated by empty black space if source generation allows it
+- final normalized frames must stay centered inside 256x256 cells
 
 STYLE:
 clean pixel art, sharp edges, 32-bit sprite style,
@@ -91,14 +108,14 @@ no pose drifting
 no shape distortion
 
 CHARACTER SCALE:
-character occupies only 35% to 40% of frame height
-character occupies only 35% to 40% of frame width
-very large empty space around character
+character occupies only 35% to 45% of each 256x256 frame height
+character occupies only 35% to 45% of each 256x256 frame width
+large empty black space around character
 do not zoom in
 
 SAFE AREA:
-all visible pixels stay inside the center 50% of each frame
-outer 50% remains empty black
+all visible character pixels should stay inside the center 60% of each frame
+outer area remains black
 
 BOUNDARY:
 no element may approach frame edges
@@ -107,7 +124,7 @@ no touching borders
 no cross-frame bleeding
 
 VERTICAL:
-character centered vertically
+character centered vertically after baseline alignment
 large empty space above and below
 ```
 
@@ -155,19 +172,19 @@ Character:
 
 Layout:
 - one horizontal row
-- 8 frames
-- 3840x320 layout intent
-- each frame conceptually 320x320
+- 8 frames only
+- final normalized output will be 2048x256
+- each final frame will be 256x256
 - pure black background only
 - no text, labels, borders, grid, UI, or presentation layout
-- large black spacing between frames
+- large black spacing around the character
 - centered safe box per frame
 
 Style:
 clean pixel art, sharp edges, 32-bit sprite style, no blur, no glow
 
 Scale and alignment:
-- character occupies 35% to 40% of frame height and width
+- character occupies 35% to 45% of frame height and width
 - feet aligned to same baseline
 - body center aligned
 - same camera angle
@@ -193,6 +210,22 @@ silhouette, palette, proportions, hairstyle, outfit, accessories, weapons, and s
 
 Create one STRICT pixel art sprite sheet for ATTACK only.
 
+Character:
+{USER_CHARACTER_PROMPT}
+
+Layout:
+- one horizontal row
+- 8 frames only
+- final normalized output will be 2048x256
+- each final frame will be 256x256
+- pure black background only
+- no text, labels, borders, grid, UI, or presentation layout
+- large black spacing around the character
+- centered safe box per frame
+
+Style:
+clean pixel art, sharp edges, 32-bit sprite style, no blur, no glow
+
 Attack animation, 8 frames:
 1 deeper crouch
 2 anticipation hold
@@ -211,8 +244,6 @@ Effect control:
 - no glow beyond character width
 - no particles spreading outward
 - all effects stay inside safe box
-
-Apply the same layout, style, scale, and alignment rules as IDLE.
 ```
 
 ### Run
@@ -222,6 +253,19 @@ Image A is the canonical base character. Use it to preserve identity,
 silhouette, palette, proportions, hairstyle, outfit, accessories, weapons, and scale.
 
 Create one STRICT pixel art sprite sheet for RUN only.
+
+Character:
+{USER_CHARACTER_PROMPT}
+
+Layout:
+- one horizontal row
+- 8 frames only
+- final normalized output will be 2048x256
+- each final frame will be 256x256
+- pure black background only
+- no text, labels, borders, grid, UI, or presentation layout
+- large black spacing around the character
+- centered safe box per frame
 
 Run animation, 8 frames:
 1 contact pose
@@ -234,7 +278,6 @@ Run animation, 8 frames:
 8 loop back toward contact pose
 
 No dust or extra effects unless user asks.
-Apply the same layout, style, scale, and alignment rules as IDLE.
 ```
 
 ### Hurt
@@ -244,6 +287,19 @@ Image A is the canonical base character. Use it to preserve identity,
 silhouette, palette, proportions, hairstyle, outfit, accessories, weapons, and scale.
 
 Create one STRICT pixel art sprite sheet for HURT only.
+
+Character:
+{USER_CHARACTER_PROMPT}
+
+Layout:
+- one horizontal row
+- 8 frames only
+- final normalized output will be 2048x256
+- each final frame will be 256x256
+- pure black background only
+- no text, labels, borders, grid, UI, or presentation layout
+- large black spacing around the character
+- centered safe box per frame
 
 Hurt animation, 8 frames:
 1 ready pose
@@ -260,108 +316,48 @@ Effect control:
 - optional tiny stars or dazed marks only around frame 6
 - all effects small and close to body
 - all effects stay inside safe box
-
-Apply the same layout, style, scale, and alignment rules as IDLE.
 ```
 
 ---
 
-## Post-Processing Code
+## Executable Scripts
 
-Use deterministic processing after image generation.
+Use:
 
-```python
-from PIL import Image
-from pathlib import Path
-import numpy as np
-from collections import deque
+```bash
+pip install -r requirements.txt
+python scripts/sprite_gif_pipeline.py \
+  --input-dir generated_sheets \
+  --output-dir output \
+  --frame-size 256 \
+  --duration 110
+```
 
-def split_equal_frames(img: Image.Image, n=8):
-    w, h = img.size
-    xs = [round(i * w / n) for i in range(n + 1)]
-    return [img.crop((xs[i], 0, xs[i + 1], h)).convert("RGBA") for i in range(n)]
+Expected input files:
 
-def nonblack_mask(frame: Image.Image):
-    arr = np.array(frame)
-    return np.any(arr[:, :, :3] != 0, axis=2)
+```text
+generated_sheets/
+  idle.png
+  attack.png
+  run.png
+  hurt.png
+```
 
-def largest_component_bbox(mask: np.ndarray):
-    h, w = mask.shape
-    visited = np.zeros((h, w), dtype=bool)
-    best_bbox = None
-    best_area = 0
-    for y in range(h):
-        for x in range(w):
-            if not mask[y, x] or visited[y, x]:
-                continue
-            q = deque([(y, x)])
-            visited[y, x] = True
-            area = 0
-            minx = maxx = x
-            miny = maxy = y
-            while q:
-                cy, cx = q.popleft()
-                area += 1
-                minx = min(minx, cx)
-                maxx = max(maxx, cx)
-                miny = min(miny, cy)
-                maxy = max(maxy, cy)
-                for ny, nx in ((cy-1,cx),(cy+1,cx),(cy,cx-1),(cy,cx+1)):
-                    if 0 <= ny < h and 0 <= nx < w and mask[ny,nx] and not visited[ny,nx]:
-                        visited[ny,nx] = True
-                        q.append((ny,nx))
-            if area > best_area:
-                best_area = area
-                best_bbox = (minx, miny, maxx + 1, maxy + 1)
-    return best_bbox
+Expected output files:
 
-def align_frames(frames):
-    infos = []
-    for fr in frames:
-        bbox = largest_component_bbox(nonblack_mask(fr))
-        if bbox is None:
-            bbox = (0, 0, fr.width, fr.height)
-        minx, miny, maxx, maxy = bbox
-        infos.append((bbox, (minx + maxx) / 2, maxy))
-    target_cx = int(round(float(np.median([i[1] for i in infos]))))
-    target_by = int(round(float(np.median([i[2] for i in infos]))))
-    aligned = []
-    logs = []
-    for fr, (bbox, cx, by) in zip(frames, infos):
-        dx = int(round(target_cx - cx))
-        dy = int(round(target_by - by))
-        canvas = Image.new("RGBA", fr.size, (0, 0, 0, 255))
-        canvas.alpha_composite(fr, (dx, dy))
-        aligned.append(canvas)
-        logs.append({"bbox": bbox, "dx": dx, "dy": dy})
-    return aligned, logs
-
-def save_aligned_sheet(frames, output_path):
-    fw, fh = frames[0].size
-    sheet = Image.new("RGBA", (fw * len(frames), fh), (0, 0, 0, 255))
-    for i, fr in enumerate(frames):
-        sheet.alpha_composite(fr, (i * fw, 0))
-    sheet.save(output_path)
-
-def save_gif(frames, output_path, duration=110):
-    pal_frames = [fr.convert("P", palette=Image.ADAPTIVE, colors=255) for fr in frames]
-    pal_frames[0].save(
-        output_path,
-        save_all=True,
-        append_images=pal_frames[1:],
-        duration=duration,
-        loop=0,
-        disposal=2,
-        optimize=False,
-    )
-
-def process_sprite_sheet(src_path, aligned_sheet_path, gif_path):
-    img = Image.open(src_path).convert("RGBA")
-    frames = split_equal_frames(img, 8)
-    aligned_frames, logs = align_frames(frames)
-    save_aligned_sheet(aligned_frames, aligned_sheet_path)
-    save_gif(aligned_frames, gif_path)
-    return logs
+```text
+output/
+  idle.gif
+  attack.gif
+  run.gif
+  hurt.gif
+  idle_sheet_aligned.png
+  attack_sheet_aligned.png
+  run_sheet_aligned.png
+  hurt_sheet_aligned.png
+  contact_sheet_aligned.png
+  alignment_log.json
+  validation_report.json
 ```
 
 ---
@@ -373,11 +369,12 @@ Before final delivery:
 - [ ] No presentation board.
 - [ ] No labels, text, frame numbers, UI, grid, or borders.
 - [ ] Four action sheets exist.
-- [ ] Each sheet has 8 frames.
 - [ ] Each sheet is horizontal.
+- [ ] Final aligned sheets are exact `2048x256`.
+- [ ] Final GIF frames are exact `256x256`.
 - [ ] Pure black background.
 - [ ] GIFs are generated from aligned sheets.
-- [ ] Foot baseline is stabilized.
+- [ ] Foot baseline is stabilized where appropriate.
 - [ ] Horizontal body center is stabilized.
 - [ ] GIFs loop correctly.
 
@@ -432,11 +429,12 @@ If GIFs are missing:
 
 1. Do not regenerate images first.
 2. Locate the existing sprite sheets.
-3. Run post-processing.
+3. Run the executable pipeline.
 4. Deliver GIF links.
 
 If alignment is poor:
 
 1. Re-run alignment using largest connected component.
 2. Align by median bottom Y and median center X.
-3. If effects distort detection, reduce effect size in prompt or mask effects manually.
+3. If effects distort detection, use `--ignore-horizontal-effects` or reduce effect size.
+4. If the source sheet has fewer or more than 8 visible subjects, regenerate that action sheet.
